@@ -162,7 +162,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void showAddProjectDialog() {
-        showProjectDialog(null, false); // null vì không có project hiện tại
+        showProjectDialog(null, false); // set null for add new function
     }
 
     private void showUpdateProjectDialog(Project project) {

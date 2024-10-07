@@ -4,9 +4,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.TextUtils;
+import android.util.Log;
+
 import com.example.finalassignment_group5_topic1b2.Model.Project;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -71,17 +75,71 @@ public class ProjectRepository {
         return rowsAffected > 0;
     }
 
-    // Delete many
-    public void deleteManyProjects(Set<Integer> projectIds) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        for (int projectId : projectIds) {
-            db.delete(DatabaseHelper.TABLE_PROJECT, DatabaseHelper.COLUMN_PROJECT_ID + " = ?", new String[]{String.valueOf(projectId)});
+    // Search projects
+    public List<Project> searchProjects(String query) {
+        List<Project> results = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        // Tìm kiếm trong bảng Project theo dev_name
+        String projectQuery = "SELECT * FROM " + DatabaseHelper.TABLE_PROJECT +
+                " WHERE " + DatabaseHelper.COLUMN_DEV_NAME + " LIKE ?";
+
+        Cursor cursor = db.rawQuery(projectQuery, new String[]{"%" + query + "%"});
+
+        while (cursor.moveToNext()) {
+            Project project = new Project();
+            project.setId(cursor.getInt(0)); // Lấy ID
+            project.setDevName(cursor.getString(1));
+            project.setTaskId(cursor.getInt(2));
+            project.setStartDate(cursor.getString(3));
+            project.setEndDate(cursor.getString(4));
+            results.add(project);
         }
-        db.close();
+        cursor.close();
+
+        Log.d("Check results", "Results size: " + results.size());
+        for (Project project : results) {
+            Log.d("Check results", "Project ID: " + project.getId() + ", Dev Name: " + project.getDevName());
+        }
+
+        // Tìm kiếm trong bảng Task theo task_name (nếu cần)
+        String taskQuery = "SELECT " + DatabaseHelper.COLUMN_TASK_ID +
+                " FROM " + DatabaseHelper.TABLE_TASK +
+                " WHERE " + DatabaseHelper.COLUMN_TASK_NAME + " LIKE ?";
+
+        Cursor taskCursor = db.rawQuery(taskQuery, new String[]{"%" + query + "%"});
+
+        Set<Integer> foundTaskIds = new HashSet<>();
+        while (taskCursor.moveToNext()) {
+            int taskId = taskCursor.getInt(0);
+            foundTaskIds.add(taskId);
+        }
+        taskCursor.close();
+
+        if (!foundTaskIds.isEmpty()) {
+            String foundProjectQuery = "SELECT * FROM " + DatabaseHelper.TABLE_PROJECT +
+                    " WHERE " + DatabaseHelper.COLUMN_TASK_FOREIGN_ID + " IN (" +
+                    TextUtils.join(",", foundTaskIds) + ")";
+
+            Cursor projectCursor = db.rawQuery(foundProjectQuery, null);
+
+            while (projectCursor.moveToNext()) {
+                Project project = new Project();
+                project.setId(projectCursor.getInt(0)); // Lấy ID
+                project.setDevName(projectCursor.getString(1));
+                project.setTaskId(projectCursor.getInt(2));
+                project.setStartDate(projectCursor.getString(3));
+                project.setEndDate(projectCursor.getString(4));
+                results.add(project);
+            }
+            cursor.close();
+        }
+
+        return results;
     }
 
     // Search projects by assignee
-    public List<Project> searchProjectsByAssignee(String assignee) {
+    public List<Project> getProjectsByDevName(String assignee) {
         List<Project> projectList = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_PROJECT +

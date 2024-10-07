@@ -62,7 +62,7 @@ public class TaskRepository {
     }
 
     // Search task by name
-    public List<Task> searchTasks(String query) {
+    public List<Task> getTasksByName(String query) {
         List<Task> taskList = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_TASK +
