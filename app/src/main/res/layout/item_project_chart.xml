@@ -1,0 +1,76 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    android:orientation="vertical"
+    android:elevation="2dp"
+    android:background="@drawable/dialog_background"
+    android:padding="5dp">
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="8"
+        android:orientation="horizontal"
+
+        android:padding="4dp"
+        android:rowCount="1">
+
+        <TextView
+            android:id="@+id/task_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="3"
+            android:paddingBottom="8dp"
+            android:text="Task name"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="5"
+            android:gravity="start"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date"
+                android:paddingBottom="2sp"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/dev_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="dev_name"
+                android:textStyle="bold"
+                android:paddingBottom="2sp"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/bar_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/duration_bar"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"
+                    android:background="#0985C3"
+                    android:layout_weight="1" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </GridLayout>
+
+<!--    <View-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="2dp"-->
+<!--        android:background="#CCCCCC" />-->
+
+</LinearLayout>

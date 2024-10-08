@@ -108,7 +108,7 @@ public class HomeFragment extends Fragment {
                             for (int projectId : selectedProjects) {
                                 projectRepository.deleteProject(projectId);
                             }
-                            loadProjects(); // Tải lại danh sách dự án
+                            loadProjects();
                             adapter.setDeleteMode(false);
                             deleteOptions.setVisibility(View.GONE);
                             btnDelete.setVisibility(View.VISIBLE);

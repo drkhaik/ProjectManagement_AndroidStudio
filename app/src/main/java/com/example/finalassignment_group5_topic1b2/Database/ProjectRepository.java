@@ -102,7 +102,6 @@ public class ProjectRepository {
             Log.d("Check results", "Project ID: " + project.getId() + ", Dev Name: " + project.getDevName());
         }
 
-        // Tìm kiếm trong bảng Task theo task_name (nếu cần)
         String taskQuery = "SELECT " + DatabaseHelper.COLUMN_TASK_ID +
                 " FROM " + DatabaseHelper.TABLE_TASK +
                 " WHERE " + DatabaseHelper.COLUMN_TASK_NAME + " LIKE ?";
