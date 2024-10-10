@@ -62,22 +62,23 @@ public class TaskRepository {
     }
 
     // Search task by name
-    public List<Task> getTasksByName(String query) {
-        List<Task> taskList = new ArrayList<>();
+    public Task getTaskByName(String taskName) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_TASK +
-                " WHERE " + DatabaseHelper.COLUMN_TASK_NAME + " LIKE ?", new String[]{"%" + query + "%"});
+                " WHERE " + DatabaseHelper.COLUMN_TASK_NAME + " = ?", new String[]{taskName});
+
+        Task task = null;
         if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(0);
-                String taskName = cursor.getString(1);
-                int estimateDays = cursor.getInt(2);
-                taskList.add(new Task(id, taskName, estimateDays));
-            } while (cursor.moveToNext());
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            int estimateDays = cursor.getInt(2);
+            task = new Task(id, name, estimateDays);
         }
+
         cursor.close();
         db.close();
-        return taskList;
+
+        return task;
     }
 
     // get task by id

@@ -1,5 +1,7 @@
 package com.example.finalassignment_group5_topic1b2.UI;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -48,10 +50,11 @@ public class SearchFragment extends Fragment {
         searchButton = view.findViewById(R.id.search_button);
         searchResults = view.findViewById(R.id.search_results);
 
-        searchResults.setLayoutManager(new LinearLayoutManager(getContext()));
-        projectAdapter = new ProjectAdapter(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), project -> {
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+        boolean hideEstimate = sharedPreferences.getBoolean("hide_estimate", false);
 
-        });
+        searchResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        projectAdapter = new ProjectAdapter(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), hideEstimate, project -> {});
         searchResults.setAdapter(projectAdapter);
 
         searchButton.setOnClickListener(v -> performSearch());

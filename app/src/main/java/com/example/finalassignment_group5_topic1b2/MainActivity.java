@@ -7,7 +7,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import android.content.Intent;
+import android.content.SharedPreferences;
 
+import com.example.finalassignment_group5_topic1b2.Service.MusicService;
 import com.example.finalassignment_group5_topic1b2.UI.ChartFragment;
 import com.example.finalassignment_group5_topic1b2.UI.HomeFragment;
 import com.example.finalassignment_group5_topic1b2.UI.SearchFragment;
@@ -17,6 +20,7 @@ import com.example.finalassignment_group5_topic1b2.databinding.ActivityMainBindi
 
 public class MainActivity extends AppCompatActivity {
     ActivityMainBinding binding;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,15 +29,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         replaceFragment(new HomeFragment());
 
-        Log.d("BottomNav", "Home ID: " + R.id.home);
+        // start background music
+        sharedPreferences = getSharedPreferences("AppSettings", 0);
+        boolean playMusic = sharedPreferences.getBoolean("play_music", false);
+        if (playMusic) {
+            Intent serviceIntent = new Intent(this, MusicService.class);
+            startService(serviceIntent);
+        }
 
         binding.bottomNavigationView.setOnItemSelectedListener(item -> {
-//            switch (item.getItemId()){
-//                case androidx.constraintlayout.widget.R.id.home:
-//                    replaceFragment(new HomeFragment());
-//                    break;
-//
-//            }
             int itemId = item.getItemId();
             if (itemId == R.id.home) {
                 replaceFragment(new HomeFragment());

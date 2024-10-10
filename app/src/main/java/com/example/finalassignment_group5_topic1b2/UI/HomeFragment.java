@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -16,11 +17,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -54,6 +57,8 @@ public class HomeFragment extends Fragment {
     private LinearLayout deleteOptions;
     private Button btnConfirmDelete;
     private Button btnCancelDelete;
+    private TextView estimateDaysHeader;
+    private boolean hideEstimate;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,6 +75,9 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+        hideEstimate = sharedPreferences.getBoolean("hide_estimate", false);
+
         // Set up RecyclerView
         recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -79,6 +87,9 @@ public class HomeFragment extends Fragment {
         btnDelete = view.findViewById(R.id.btn_delete);
         btnConfirmDelete = view.findViewById(R.id.btn_confirm_delete);
         btnCancelDelete = view.findViewById(R.id.btn_cancel_delete);
+        estimateDaysHeader = view.findViewById(R.id.estimate_days);
+
+        estimateDaysHeader.setVisibility(hideEstimate ? View.INVISIBLE : View.VISIBLE);
 
         loadProjects();
 
@@ -104,7 +115,6 @@ public class HomeFragment extends Fragment {
                         .setTitle("Confirm Delete")
                         .setMessage("Are you sure you want to delete?")
                         .setPositiveButton("Yes", (dialog, which) -> {
-                            // Thực hiện xóa
                             for (int projectId : selectedProjects) {
                                 projectRepository.deleteProject(projectId);
                             }
@@ -152,13 +162,22 @@ public class HomeFragment extends Fragment {
             }
         }
 
-        adapter = new ProjectAdapter(projects, taskNames, estimateDays, new ProjectAdapter.OnProjectClickListener() {
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
+        boolean hideEstimate = sharedPreferences.getBoolean("hide_estimate", false);
+
+        adapter = new ProjectAdapter(projects, taskNames, estimateDays,hideEstimate, new ProjectAdapter.OnProjectClickListener() {
             @Override
             public void onItemClick(Project project) {
                 showUpdateProjectDialog(project);
             }
         });
         recyclerView.setAdapter(adapter);
+
+        if (hideEstimate) {
+            adapter.setEstimateDaysVisibility(View.GONE);
+        } else {
+            adapter.setEstimateDaysVisibility(View.VISIBLE);
+        }
     }
 
     private void showAddProjectDialog() {
@@ -171,7 +190,7 @@ public class HomeFragment extends Fragment {
 
     private void showProjectDialog(Project project, boolean isUpdate) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(isUpdate ? "Update Project" : "Add New Project");
+        builder.setTitle(isUpdate ? "Detail Project Plan" : "Add New Project");
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View dialogView = inflater.inflate(R.layout.dialog_project, null);
@@ -179,6 +198,7 @@ public class HomeFragment extends Fragment {
 
         final EditText txtDevName = dialogView.findViewById(R.id.txtDevName);
         final Spinner spinnerTasks = dialogView.findViewById(R.id.spinnerTasks);
+        final TextView tvDialogEstimateDays = dialogView.findViewById(R.id.estimate_days);
         final EditText txtStartDate = dialogView.findViewById(R.id.txtStartDate);
         final EditText txtEndDate = dialogView.findViewById(R.id.txtEndDate);
 
@@ -203,11 +223,34 @@ public class HomeFragment extends Fragment {
             txtEndDate.setText(project.getEndDate());
 
             Integer currentTaskId = project.getTaskId();
-            int taskPosition = taskNames.indexOf(taskRepository.getTaskById(currentTaskId).getTaskName());
+            Task currentTask = taskRepository.getTaskById(currentTaskId);
+            String taskName = currentTask.getTaskName();
+
+            int taskPosition = taskNames.indexOf(taskName);
+            int estimateDays = currentTask.getEstimateDays();
+
+            tvDialogEstimateDays.setText(estimateDays+"");
+
             if (taskPosition >= 0) {
                 spinnerTasks.setSelection(taskPosition);
             }
         }
+
+        spinnerTasks.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedTaskName = parent.getItemAtPosition(position).toString();
+                Task selectedTask = taskRepository.getTaskByName(selectedTaskName);
+
+                if (selectedTask != null) {
+                    int estimateDays = selectedTask.getEstimateDays();
+                    tvDialogEstimateDays.setText(estimateDays + "");
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         txtStartDate.setOnClickListener(v -> showDatePickerDialog(txtStartDate));
         txtEndDate.setOnClickListener(v -> showDatePickerDialog(txtEndDate));

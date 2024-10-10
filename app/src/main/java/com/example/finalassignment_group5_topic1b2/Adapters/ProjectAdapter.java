@@ -25,16 +25,18 @@ public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ProjectV
     private OnProjectClickListener listener;
     private Set<Integer> selectedProjects = new HashSet<>();
     private boolean isDeleteMode = false;
+    private boolean isHideEstimate;
 
     public interface OnProjectClickListener {
         void onItemClick(Project project);
     }
 
-    public ProjectAdapter(List<Project> projectList, List<String> taskNames, List<Integer> estimateDays, OnProjectClickListener listener) {
+    public ProjectAdapter(List<Project> projectList, List<String> taskNames, List<Integer> estimateDays, boolean isHideEstimate, OnProjectClickListener listener) {
         this.projectList = projectList;
         this.taskNames = taskNames;
         this.estimateDays = estimateDays;
         this.listener = listener;
+        this.isHideEstimate = isHideEstimate;
     }
 
     @NonNull
@@ -51,7 +53,12 @@ public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ProjectV
         holder.devName.setText(project.getDevName());
         holder.startDate.setText(project.getStartDate());
         holder.endDate.setText(project.getEndDate());
-        holder.estimateDays.setText(estimateDays.size() > position ? estimateDays.get(position) + " days" : "");
+        if (isHideEstimate) {
+            holder.estimateDays.setVisibility(View.INVISIBLE);
+        } else {
+            holder.estimateDays.setText(estimateDays.size() > position ? estimateDays.get(position) + " days" : "");
+            holder.estimateDays.setVisibility(View.VISIBLE);
+        }
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(project));
 
@@ -113,5 +120,11 @@ public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ProjectV
         this.estimateDays.clear();
         this.estimateDays.addAll(newEstimateDays);
         notifyDataSetChanged();
+    }
+
+    public void setEstimateDaysVisibility(int visibility) {
+        for (int i = 0; i < projectList.size(); i++) {
+            notifyItemChanged(i); // Cập nhật từng item trong adapter
+        }
     }
 }
