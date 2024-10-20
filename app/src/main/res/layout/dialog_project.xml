@@ -1,4 +1,3 @@
-<!-- res/layout/dialog_project.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -6,6 +5,13 @@
     android:background="@drawable/dialog_background"
     android:orientation="vertical"
     android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Developer Name"
+        android:textSize="16sp"
+        android:layout_marginBottom="5dp"/>
 
     <EditText
         android:id="@+id/txtDevName"
@@ -15,49 +21,65 @@
         android:padding="10dp"
         />
 
-    <Spinner
-        android:id="@+id/spinnerTasks"
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Task Name"
+        android:textSize="16sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"/>
+
+    <EditText
+        android:id="@+id/txtTaskName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="Task name"
         android:padding="10dp"
-        android:background="@drawable/custom_spinner_background"/>
+        android:inputType="text"
+        />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_columnWeight="1"
-        android:gravity="start"
-        android:orientation="horizontal"
-        android:padding="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Estimate Days"
-            android:textStyle="bold"
-            android:padding="4dp"/>
-
-        <TextView
-            android:id="@+id/estimate_days"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-             />
-    </LinearLayout>
+        android:text="Start Date (dd/mm/yyyy)"
+        android:textSize="16sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"/>
 
     <EditText
         android:id="@+id/txtStartDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Start Date (dd/mm/yyyy)"
-        android:padding="10dp"
-        />
+        android:padding="10dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="End Date (dd/mm/yyyy)"
+        android:textSize="16sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"/>
 
     <EditText
         android:id="@+id/txtEndDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="End Date (dd/mm/yyyy)"
-        android:padding="10dp"
-        />
+        android:padding="10dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Estimate Days"
+        android:textSize="16sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp"/>
+
+    <EditText
+        android:id="@+id/txtEstimateDay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Estimate Days"
+        android:padding="10dp" />
 </LinearLayout>

@@ -17,13 +17,17 @@ public class TaskRepository {
     }
 
     // Add task
-    public void addTask(Task task) {
+    public int addTask(Task task) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.COLUMN_TASK_NAME, task.getTaskName());
         values.put(DatabaseHelper.COLUMN_ESTIMATE_DAY, task.getEstimateDays());
-        db.insert(DatabaseHelper.TABLE_TASK, null, values);
+
+        // Thêm task vào cơ sở dữ liệu và lấy ID của task vừa thêm
+        long newId = db.insert(DatabaseHelper.TABLE_TASK, null, values);
         db.close();
+
+        return (int) newId;
     }
 
     // Update Task

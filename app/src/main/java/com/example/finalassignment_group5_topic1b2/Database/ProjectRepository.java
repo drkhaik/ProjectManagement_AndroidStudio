@@ -157,4 +157,30 @@ public class ProjectRepository {
         db.close();
         return projectList;
     }
+
+    // Phương thức để lấy task ID dựa trên project ID
+    public Integer getTaskIdByProjectId(int projectId) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Integer taskId = null;
+        String query = "SELECT " + DatabaseHelper.COLUMN_TASK_FOREIGN_ID +
+                " FROM " + DatabaseHelper.TABLE_PROJECT +
+                " WHERE " + DatabaseHelper.COLUMN_PROJECT_ID + " = ?";
+        Cursor cursor = null;
+
+        try {
+            cursor = db.rawQuery(query, new String[]{String.valueOf(projectId)});
+            if (cursor.moveToFirst()) {
+                taskId = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_TASK_FOREIGN_ID));
+            }
+        } catch (Exception e) {
+            Log.e("ProjectRepository", "Error getting task ID by project ID", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        return taskId;
+    }
+
 }

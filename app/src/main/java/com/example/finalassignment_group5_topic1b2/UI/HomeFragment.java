@@ -39,6 +39,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -53,6 +56,7 @@ public class HomeFragment extends Fragment {
     private ProjectAdapter adapter;
     private FloatingActionButton fabAddProject;
     private ProjectRepository projectRepository;
+    private TaskRepository taskRepository;
     private Button btnDelete;
     private LinearLayout deleteOptions;
     private Button btnConfirmDelete;
@@ -77,6 +81,8 @@ public class HomeFragment extends Fragment {
 
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
         hideEstimate = sharedPreferences.getBoolean("hide_estimate", false);
+
+        taskRepository = new TaskRepository(getContext());
 
         // Set up RecyclerView
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -116,6 +122,11 @@ public class HomeFragment extends Fragment {
                         .setMessage("Are you sure you want to delete?")
                         .setPositiveButton("Yes", (dialog, which) -> {
                             for (int projectId : selectedProjects) {
+                                Integer taskId = projectRepository.getTaskIdByProjectId(projectId);
+                                Log.d("check task ID", "cehck" + taskId);
+                                if (taskId != null) {
+                                    taskRepository.deleteTask(taskId);
+                                }
                                 projectRepository.deleteProject(projectId);
                             }
                             loadProjects();
@@ -197,101 +208,132 @@ public class HomeFragment extends Fragment {
         builder.setView(dialogView);
 
         final EditText txtDevName = dialogView.findViewById(R.id.txtDevName);
-        final Spinner spinnerTasks = dialogView.findViewById(R.id.spinnerTasks);
-        final TextView tvDialogEstimateDays = dialogView.findViewById(R.id.estimate_days);
+        final EditText txtTaskName = dialogView.findViewById(R.id.txtTaskName);
+        final EditText tvDialogEstimateDays = dialogView.findViewById(R.id.txtEstimateDay);
         final EditText txtStartDate = dialogView.findViewById(R.id.txtStartDate);
         final EditText txtEndDate = dialogView.findViewById(R.id.txtEndDate);
 
-        // Spinner to select task
-        TaskRepository taskRepository = new TaskRepository(getContext());
-        // get all tasks
-        List<Task> tasks = taskRepository.getAllTasks();
-        List<String> taskNames = new ArrayList<>();
-
-        for (Task task : tasks) {
-            taskNames.add(task.getTaskName());
-        }
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, taskNames);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerTasks.setAdapter(adapter);
-
-        // if is update, select task has already in project
+        // if is update, select task already have in project
         if (isUpdate) {
             txtDevName.setText(project.getDevName());
             txtStartDate.setText(project.getStartDate());
             txtEndDate.setText(project.getEndDate());
 
-            Integer currentTaskId = project.getTaskId();
-            Task currentTask = taskRepository.getTaskById(currentTaskId);
-            String taskName = currentTask.getTaskName();
-
-            int taskPosition = taskNames.indexOf(taskName);
-            int estimateDays = currentTask.getEstimateDays();
-
-            tvDialogEstimateDays.setText(estimateDays+"");
-
-            if (taskPosition >= 0) {
-                spinnerTasks.setSelection(taskPosition);
+            Task currentTask = taskRepository.getTaskById(project.getTaskId());
+            if (currentTask != null) {
+                txtTaskName.setText(currentTask.getTaskName());
+                tvDialogEstimateDays.setText(String.valueOf(currentTask.getEstimateDays()));
             }
         }
 
-        spinnerTasks.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedTaskName = parent.getItemAtPosition(position).toString();
-                Task selectedTask = taskRepository.getTaskByName(selectedTaskName);
-
-                if (selectedTask != null) {
-                    int estimateDays = selectedTask.getEstimateDays();
-                    tvDialogEstimateDays.setText(estimateDays + "");
+        txtStartDate.setOnClickListener(v -> showDatePickerDialog(txtStartDate));
+        txtEndDate.setOnClickListener(v -> {
+            showDatePickerDialog(txtEndDate);
+            txtEndDate.setOnFocusChangeListener((v1, hasFocus) -> {
+                if (!hasFocus) {
+                    String startDate = txtStartDate.getText().toString();
+                    String endDate = txtEndDate.getText().toString();
+                    if (!startDate.isEmpty() && !endDate.isEmpty()) {
+                        int estimateDays = calculateEstimateDays(startDate, endDate);
+                        Log.d("check", "check estimate days" + estimateDays);
+                        tvDialogEstimateDays.setText(String.valueOf(estimateDays));
+                    } else {
+                        tvDialogEstimateDays.setText("");
+                    }
                 }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            });
         });
 
-        txtStartDate.setOnClickListener(v -> showDatePickerDialog(txtStartDate));
-        txtEndDate.setOnClickListener(v -> showDatePickerDialog(txtEndDate));
-
-        builder.setPositiveButton(isUpdate ? "Update" : "Add", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String devName = txtDevName.getText().toString();
+        txtStartDate.setOnFocusChangeListener((v1, hasFocus) -> {
+            if (!hasFocus) {
                 String startDate = txtStartDate.getText().toString();
                 String endDate = txtEndDate.getText().toString();
-                Integer taskIdSelected = findTaskByName(tasks, spinnerTasks.getSelectedItem().toString());
-                if (taskIdSelected != null) {
+                if (!startDate.isEmpty() && !endDate.isEmpty()) {
+                    int estimateDays = calculateEstimateDays(startDate, endDate);
+                    Log.d("check", "check estimate days" + estimateDays);
+                    tvDialogEstimateDays.setText(String.valueOf(estimateDays));
+                } else {
+                    tvDialogEstimateDays.setText("");
+                }
+            }
+        });
+
+        builder.setPositiveButton(isUpdate ? "Update" : "Add", null);
+
+        AlertDialog dialog = builder.create();
+
+        // Set the positive button action
+        dialog.setOnShowListener(dialogInterface -> {
+            Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            button.setOnClickListener(v -> {
+                String devName = txtDevName.getText().toString().trim();
+                String taskName = txtTaskName.getText().toString().trim();
+                String startDate = txtStartDate.getText().toString().trim();
+                String endDate = txtEndDate.getText().toString().trim();
+
+                // calculate estimate days from start date and end date
+                Integer estimateDays = calculateEstimateDays(startDate, endDate);
+
+                // Validate input
+                if (taskName.isEmpty() || startDate.isEmpty() || endDate.isEmpty()) {
+                    Toast.makeText(getContext(), "Please enter all fields!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (!isValidDateRange(startDate, endDate)) {
+                    Toast.makeText(getContext(), "End Date must be after Start Date!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // check the user has change estimateDays or not
+                String estimateDaysInput = tvDialogEstimateDays.getText().toString().trim();
+                if (!estimateDaysInput.isEmpty()) {
+                    // if they input another value, get that value
+                    try {
+                        estimateDays = Integer.parseInt(estimateDaysInput);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(getContext(), "Please enter a valid number for Estimate Days!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+
                     if (isUpdate) {
-                        // update project
-                        Log.d("Check update", "Update" + project.getId());
-                        updateProject(project.getId(), devName, taskIdSelected, startDate, endDate);
-                        // check overlap
+                        Integer taskId = project.getTaskId();
+                        Task updatedTask = new Task(taskId, taskName, estimateDays);
+                        taskRepository.updateTask(updatedTask);
+                        updateProject(project.getId(), devName, taskId, startDate, endDate);
+                        // Check overlap
                         if (checkForOverlaps(project.getId(), startDate, endDate)) {
                             String message = String.format("Task %s causes an overlap to other tasks when updating at %s",
                                     devName, new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
                             showNotification(message);
                         }
                     } else {
-                        // add new project
-                        Project newProject = new Project(0, devName, taskIdSelected, startDate, endDate);
-                        // check overlap
+                        if (taskRepository.getAllTasks().stream().anyMatch(task -> task.getTaskName().equalsIgnoreCase(taskName))) {
+                            Toast.makeText(getContext(), "Task with this name already exists.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Task newTask = new Task(0, taskName, estimateDays);
+                        int newTaskId = taskRepository.addTask(newTask);
+                        Project newProject = new Project(0, devName, newTaskId, startDate, endDate);
+                        // Check overlap
                         if (checkForOverlaps(newProject.getId(), startDate, endDate)) {
-                            String message = String.format("Task %s causes an overlap to other tasks when updating at %s",
+                            String message = String.format("Task %s causes an overlap to other tasks when adding at %s",
                                     devName, new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
                             showNotification(message);
                         }
                         projectRepository.addProject(newProject);
                         Toast.makeText(getContext(), "Project added successfully!", Toast.LENGTH_SHORT).show();
                     }
+
                     loadProjects();
-                }
-            }
+                    dialog.dismiss(); // Close the dialog only if everything is valid
+
+            });
         });
 
-        builder.setNegativeButton("Cancel", null);
-        builder.show();
+        builder.setNegativeButton("Cancel", (dialogInterface, i) -> dialog.dismiss());
+        dialog.show();
     }
 
     private void updateProject(int projectId, String devName, int taskId, String startDate, String endDate) {
@@ -299,6 +341,27 @@ public class HomeFragment extends Fragment {
         projectRepository.updateProject(updatedProject);
         loadProjects();
         Toast.makeText(getContext(), "Project updated successfully!", Toast.LENGTH_SHORT).show();
+    }
+
+    // validate to make sure start date before end date
+    private boolean isValidDateRange(String startDate, String endDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        try {
+            Date start = sdf.parse(startDate);
+            Date end = sdf.parse(endDate);
+            return end != null && start != null && end.after(start);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private int calculateEstimateDays(String startDate, String endDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate start = LocalDate.parse(startDate, formatter);
+        LocalDate end = LocalDate.parse(endDate, formatter);
+        // Tính số ngày ước tính
+        return (int) ChronoUnit.DAYS.between(start, end) + 1;
     }
 
     private void showDatePickerDialog(final EditText editText) {
