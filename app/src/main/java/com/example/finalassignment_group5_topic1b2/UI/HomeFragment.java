@@ -64,6 +64,13 @@ public class HomeFragment extends Fragment {
     private TextView estimateDaysHeader;
     private boolean hideEstimate;
 
+    private EditText searchInput;
+    private Button searchButton;
+    private Button returnButton;
+    private RecyclerView searchResults;
+    private ProjectAdapter searchAdapter;
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +91,10 @@ public class HomeFragment extends Fragment {
 
         taskRepository = new TaskRepository(getContext());
 
+        searchInput = view.findViewById(R.id.search_input);
+        searchButton = view.findViewById(R.id.search_button);
+        returnButton = view.findViewById(R.id.return_button);
+
         // Set up RecyclerView
         recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -98,6 +109,8 @@ public class HomeFragment extends Fragment {
         estimateDaysHeader.setVisibility(hideEstimate ? View.INVISIBLE : View.VISIBLE);
 
         loadProjects();
+
+        searchButton.setOnClickListener(v -> performSearch());
 
         // show box to add
         fabAddProject.setOnClickListener(new View.OnClickListener() {
@@ -148,6 +161,11 @@ public class HomeFragment extends Fragment {
             btnDelete.setVisibility(View.VISIBLE);
         });
 
+        returnButton.setOnClickListener(v -> {
+            loadProjects();
+            returnButton.setVisibility(View.GONE);
+        });
+
         return view;
     }
 
@@ -155,10 +173,7 @@ public class HomeFragment extends Fragment {
         projectRepository = new ProjectRepository(getContext());
         TaskRepository taskRepository = new TaskRepository(getContext());
 
-        // get all projects
         List<Project> projects = projectRepository.getAllProjects();
-
-        // initial task name and estimate days
         List<String> taskNames = new ArrayList<>();
         List<Integer> estimateDays = new ArrayList<>();
 
@@ -184,10 +199,31 @@ public class HomeFragment extends Fragment {
         });
         recyclerView.setAdapter(adapter);
 
-        if (hideEstimate) {
-            adapter.setEstimateDaysVisibility(View.GONE);
+        adapter.setEstimateDaysVisibility(hideEstimate ? View.GONE : View.VISIBLE);
+    }
+
+    private void performSearch() {
+        String query = searchInput.getText().toString().trim();
+        if (!query.isEmpty()) {
+            List<Project> results = projectRepository.searchProjects(query);
+            List<String> newTaskNames = new ArrayList<>();
+            List<Integer> newEstimateDays = new ArrayList<>();
+            for (Project project : results) {
+                Task task = taskRepository.getTaskById(project.getTaskId());
+                if (task != null) {
+                    newTaskNames.add(task.getTaskName());
+                    newEstimateDays.add(task.getEstimateDays());
+                }
+            }
+
+            adapter.updateData(results, newTaskNames, newEstimateDays);
+            returnButton.setVisibility(View.VISIBLE);
+
+            if (results.isEmpty()) {
+                Toast.makeText(getContext(), "No projects found.", Toast.LENGTH_SHORT).show();
+            }
         } else {
-            adapter.setEstimateDaysVisibility(View.VISIBLE);
+            Toast.makeText(getContext(), "Please enter a dev name or task name.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -436,7 +472,7 @@ public class HomeFragment extends Fragment {
         // create and show noti
         NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
         String channelId = "task_overlap_channel";
-        String channelName = "Task Overlap Notifications";
+        String channelName = "Task Overlap!";
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);

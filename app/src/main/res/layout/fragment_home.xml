@@ -46,6 +46,43 @@
                 android:textSize="12sp" />
         </GridLayout>
 
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="9"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:rowCount="1">
+            <EditText
+                android:id="@+id/search_input"
+                android:layout_width="0sp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="6"
+                android:hint="Task name or Assignee"
+                />
+
+            <Button
+                android:id="@+id/search_button"
+                android:layout_width="0sp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="3"
+                android:backgroundTint="#117FD7"
+                android:text="Search"
+                />
+        </GridLayout>
+
+        <Button
+            android:id="@+id/return_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Return"
+            android:backgroundTint="#998E8C"
+            android:textColor="#FFFFFF"
+            android:layout_marginRight="20dp"
+            android:visibility="gone"
+            android:layout_gravity="end"/>
+
         <GridLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -153,17 +190,15 @@
                 android:text="Delete"
                 android:textColor="#FFFFFF" />
         </LinearLayout>
-
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_add_project"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_margin="5dp"
+            android:layout_margin="16dp"
             android:backgroundTint="#2196F3"
             android:src="@drawable/baseline_add_24"
-
-            app:fabSize="mini" />
+            app:fabSize="normal" />
 
     </LinearLayout>
 
